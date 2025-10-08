@@ -13,8 +13,8 @@ Vagrant.configure("2") do |config|
     # Provider VirtualBox : ressources minimales
     server.vm.provider "virtualbox" do |vb|
       vb.name = "ACalixteS"
-      vb.memory = 512
-      vb.cpus = 1
+      vb.memory = 1024
+      vb.cpus = 2
     end
 
     # Provisioning shell (bonus K3s en mode server)
@@ -35,8 +35,8 @@ Vagrant.configure("2") do |config|
     # Provider VirtualBox : ressources minimales
     worker.vm.provider "virtualbox" do |vb|
       vb.name = "ACalixteSW"
-      vb.memory = 512
-      vb.cpus = 1
+      vb.memory = 1024
+      vb.cpus = 2
     end
 
     # Provisioning shell (bonus K3s en mode agent)

@@ -1,52 +1,73 @@
-# Vagrantfile pour TP Vagrant : Server + ServerWorker
+# Vagrantfile pour TP Vagrant : Server + ServerWorker K3s
 
 Vagrant.configure("2") do |config|
-  # Box de base pour toutes les machines
-  config.vm.box = "ubuntu/bionic64"   # Remplace par la version qu'on veut
-
-  # 1️ Machine Server (CalixteS)
+  config.vm.box = "ubuntu/jammy64"
  
-  config.vm.define "AnnieS" do |server|
-    server.vm.hostname = "AnnieS"
+  # Dossier partagé (pour le token)
+  config.vm.synced_folder ".", "/vagrant"
+ 
+  # -------- MACHINE 1 : MASTER --------
+  config.vm.define "annieS" do |server|
+    server.vm.hostname = "annieS"
     server.vm.network "private_network", ip: "192.168.56.110"
-
-    # Provider VirtualBox : ressources minimales
+ 
     server.vm.provider "virtualbox" do |vb|
-      vb.name = "AnnieS"
+      vb.name = "annieS"
       vb.memory = 1024
       vb.cpus = 2
     end
-
-    # Provisioning shell (bonus K3s en mode server)
+ 
     server.vm.provision "shell", inline: <<-SHELL
-      echo "Provisioning Server (AnnieS)..."
-      # Installer K3s en mode server 
+      echo "==== Installation du MASTER K3s ===="
       curl -sfL https://get.k3s.io | sh -
-      echo "K3s server installé sur AnnieS"
+      echo "==== K3s installé sur annieS ===="
+     
+      # Copie le token dans le dossier partagé
+      sudo cat /var/lib/rancher/k3s/server/node-token > /vagrant/node-token
+      echo "==== Token K3s sauvegardé dans /vagrant/node-token ===="
     SHELL
   end
-
-  # 2️ Machine ServerWorker (CalixteSW)
-  
-  config.vm.define "AnnieSW" do |worker|
-    worker.vm.hostname = "AnnieSW"
+ 
+  # -------- MACHINE 2 : WORKER --------
+  config.vm.define "annieSW" do |worker|
+    worker.vm.hostname = "annieSW"
     worker.vm.network "private_network", ip: "192.168.56.111"
-
-    # Provider VirtualBox : ressources minimales
+ 
     worker.vm.provider "virtualbox" do |vb|
-      vb.name = "AnnieSW"
+      vb.name = "annieSW"
       vb.memory = 1024
       vb.cpus = 2
     end
-
-    # Provisioning shell (bonus K3s en mode agent)
+ 
     worker.vm.provision "shell", inline: <<-SHELL
-      echo "Provisioning ServerWorker (AnnieSW)..."
-      # Récupération du token K3s depuis le serveur
-      K3S_TOKEN=$(ssh -o StrictHostKeyChecking=no vagrant@192.168.56.110 "sudo cat /var/lib/rancher/k3s/server/node-token")
-      # Installer K3s en mode agent (décommenter si nécessaire)
-      curl -sfL https://get.k3s.io | K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=YOUR_TOKEN sh -
-      echo "K3s worker installé et rejoint le cluster"
+      echo "==== Installation du WORKER K3s ===="
+      apt-get update -y
+      apt-get install -y curl
+ 
+      # Attente du token du master (max 2 min)
+      echo "Attente du fichier /vagrant/node-token..."
+      for i in {1..24}; do
+        if [ -f /vagrant/node-token ]; then
+          echo "Token trouvé !"
+          break
+        fi
+        echo "En attente du token... ($i/24)"
+        sleep 5
+      done
+ 
+      if [ ! -f /vagrant/node-token ]; then
+        echo "❌ Token non trouvé après 2 minutes. Abandon."
+        exit 1
+      fi
+ 
+      TOKEN=$(cat /vagrant/node-token)
+      K3S_URL="https://192.168.56.110:6443"
+ 
+      echo "Connexion du worker au cluster..."
+      curl -sfL https://get.k3s.io | K3S_URL=$K3S_URL K3S_TOKEN=$TOKEN sh -
+ 
+      echo "==== Worker connecté avec succès ===="
     SHELL
   end
 end
+ 

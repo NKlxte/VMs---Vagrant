@@ -2,46 +2,46 @@
 
 Vagrant.configure("2") do |config|
   # Box de base pour toutes les machines
-  config.vm.box = "ubuntu/bionic64"   # Remplace par la version que tu veux
+  config.vm.box = "ubuntu/bionic64"   # Remplace par la version qu'on veut
 
   # 1️ Machine Server (CalixteS)
  
-  config.vm.define "ACalixteS" do |server|
-    server.vm.hostname = "ACalixteS"
+  config.vm.define "AnnieS" do |server|
+    server.vm.hostname = "AnnieS"
     server.vm.network "private_network", ip: "192.168.56.110"
 
     # Provider VirtualBox : ressources minimales
     server.vm.provider "virtualbox" do |vb|
-      vb.name = "ACalixteS"
+      vb.name = "AnnieS"
       vb.memory = 1024
       vb.cpus = 2
     end
 
     # Provisioning shell (bonus K3s en mode server)
     server.vm.provision "shell", inline: <<-SHELL
-      echo "Provisioning Server (ACalixteS)..."
-      # Installer K3s en mode server (décommenter si nécessaire)
+      echo "Provisioning Server (AnnieS)..."
+      # Installer K3s en mode server 
       curl -sfL https://get.k3s.io | sh -
-      echo "K3s server installé sur ACalixteS"
+      echo "K3s server installé sur AnnieS"
     SHELL
   end
 
   # 2️ Machine ServerWorker (CalixteSW)
   
-  config.vm.define "ACalixteSW" do |worker|
-    worker.vm.hostname = "ACalixteSW"
+  config.vm.define "AnnieSW" do |worker|
+    worker.vm.hostname = "AnnieSW"
     worker.vm.network "private_network", ip: "192.168.56.111"
 
     # Provider VirtualBox : ressources minimales
     worker.vm.provider "virtualbox" do |vb|
-      vb.name = "ACalixteSW"
+      vb.name = "AnnieSW"
       vb.memory = 1024
       vb.cpus = 2
     end
 
     # Provisioning shell (bonus K3s en mode agent)
     worker.vm.provision "shell", inline: <<-SHELL
-      echo "Provisioning ServerWorker (ACalixteSW)..."
+      echo "Provisioning ServerWorker (AnnieSW)..."
       # Récupération du token K3s depuis le serveur
       K3S_TOKEN=$(ssh -o StrictHostKeyChecking=no vagrant@192.168.56.110 "sudo cat /var/lib/rancher/k3s/server/node-token")
       # Installer K3s en mode agent (décommenter si nécessaire)

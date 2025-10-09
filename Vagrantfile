@@ -56,7 +56,7 @@ Vagrant.configure("2") do |config|
       done
  
       if [ ! -f /vagrant/node-token ]; then
-        echo "❌ Token non trouvé après 2 minutes. Abandon."
+        echo "Token non trouvé après 2 minutes. Abandon."
         exit 1
       fi
  
